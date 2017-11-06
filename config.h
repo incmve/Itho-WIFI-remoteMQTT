@@ -16,7 +16,7 @@
 // MQTT Topics
 #define CONFIG_MQTT_TOPIC_TEMP "itho/temperature"
 #define CONFIG_MQTT_TOPIC_HUMID "itho/humidity"
-#define CONFIG_MQTT_TOPIC_RESPONSE "itho/repsonse"
+#define CONFIG_MQTT_TOPIC_RESPONSE "itho/response"
 #define CONFIG_MQTT_TOPIC_COMMAND "itho/command"
 
 // DHT
