@@ -21,7 +21,7 @@
 
 // DHT
 // Define the DHT type in the code file.
-#define CONFIG_DHT_ENABLE 0
-#define CONFIG_DHT_PIN 2
+#define CONFIG_DHT_ENABLE 0 // 0 = disable and 1 = enable
+#define CONFIG_DHT_PIN 2 
 #define CONFIG_DHT_TYPE DHT22
 #define CONFIG_DHT_SAMPLE_DELAY 60000 // Milliseconds between readings

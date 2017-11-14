@@ -25,7 +25,7 @@ For SPI, pins 12-15 ()aka D5-D8) are used, a larger ESP8266 model like (but not 
 
 Added a web interface and simple API to control it from something like https://pimatic.org/
 
-![alt tag](https://github.com/incmve/Itho-WIFI-remote/blob/master/Images/cntrl panel.JPG)
+![alt tag](https://github.com/incmve/Itho-WIFI-remote/blob/master/Images/cntrl%20panel.JPG)
 
 Also able to give commands by USB
 
