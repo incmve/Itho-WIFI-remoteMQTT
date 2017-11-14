@@ -1,5 +1,3 @@
-#include <DHT.h>
-
 // Includes
 #include <ESP8266mDNS.h>
 #include <ESP8266WiFi.h>
@@ -12,10 +10,9 @@
 #include <EEPROM.h>
 #include <WiFiClient.h>
 #include <TimeLib.h>
-//#include "DHT.h"
 #include <PubSubClient.h>
+#include <DHT.h>
 #include "config.h"
-
 
 
 // WIFI
@@ -23,7 +20,6 @@ String ssid    = CONFIG_WIFI_SSID;
 String password = CONFIG_WIFI_PASS;
 String espName    = CONFIG_WIFI_NAME;
 
-String Version = "0.8.2B";
 
 
 String ClientIP;
@@ -37,8 +33,6 @@ WiFiClient client;
 const int DHTPIN = CONFIG_DHT_PIN;
 #define DHTTYPE  CONFIG_DHT_TYPE   // DHT 22
 DHT dht(DHTPIN, DHTTYPE); // Initialize DHT sensor
-const long dht_sendInterval = CONFIG_DHT_SAMPLE_DELAY;
-long dht_lastInterval  = 0;
 long DHTEnabled     = CONFIG_DHT_ENABLE; //1 is on
 String laststate;
 String CurrentState;
@@ -49,7 +43,6 @@ String CurrentTemperature;
 const char* mqttServer = CONFIG_MQTT_HOST;
 const char* mqttUsername = CONFIG_MQTT_USER;
 const char* mqttPassword = CONFIG_MQTT_PASS;
-const char* mqttClientId = CONFIG_MQTT_CLIENT_ID; // Must be unique on the MQTT network
 PubSubClient mqttclient(client);
 
 // MQTT Topics
@@ -66,11 +59,9 @@ int timerx10;
 unsigned long time2 = millis();
 
 
-
 //HTML
 
 String header       =  "<html lang='en'><head><title>Itho control panel</title><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><link rel='stylesheet' href='http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css'><script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'></script><script src='http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js'></script></head><body>";
-String navbar       =  "<nav class='navbar navbar-default'><div class='container-fluid'><div class='navbar-header'><a class='navbar-brand' href='/'>Itho control panel</a></div><div><ul class='nav navbar-nav'><li><a href='/'><span class='glyphicon glyphicon-question-sign'></span> Status</a></li><li class='dropdown'><a class='dropdown-toggle' data-toggle='dropdown' href='#'><span class='glyphicon glyphicon-cog'></span> Tools<span class='caret'></span></a><ul class='dropdown-menu'><li><a href='/api?action=reset&value=true'>Restart</a></ul></li><li><a href='https://github.com/incmve/Itho-WIFI-remote' target='_blank'><span class='glyphicon glyphicon-question-sign'></span> Help</a></li></ul></div></div></nav>  ";
 
 String containerStart   =  "<div class='container'><div class='row'>";
 String containerEnd     =  "<div class='clearfix visible-lg'></div></div></div>";
@@ -267,7 +258,6 @@ void loop(void)
     timerx10 = 0;
     Serial.println("Returning to low.");
     eepromWrite(0, 6, "Low");
-    mqttclient.publish(CONFIG_MQTT_TOPIC_RESPONSE, String(CurrentState).c_str());
     handle_root();
 
   }
@@ -332,7 +322,6 @@ void reconnect() {
     if (mqttclient.connect(mqttClientId, mqttUsername, mqttPassword)) {
       Serial.println("connected");
       // subscribe
-      mqttclient.subscribe(CONFIG_MQTT_TOPIC_COMMAND);
     } else {
       Serial.print("failed, rc=");
       Serial.print(mqttclient.state());
@@ -363,22 +352,18 @@ void my_interrupt_handler()
       case IthoLow:
         Serial.print("low\n");
         eepromWrite(0, 6, "Low");
-        mqttclient.publish(CONFIG_MQTT_TOPIC_RESPONSE, String(CurrentState).c_str());
         break;
       case IthoMedium:
         Serial.print("medium\n");
         eepromWrite(0, 6, "Medium");
-        mqttclient.publish(CONFIG_MQTT_TOPIC_RESPONSE, String(CurrentState).c_str());
         break;
       case IthoFull:
         Serial.print("full\n");
         eepromWrite(0, 6, "Full");
-        mqttclient.publish(CONFIG_MQTT_TOPIC_RESPONSE, String(CurrentState).c_str());
         break;
       case IthoTimer1:
         Serial.print("timer1\n");
         eepromWrite(0, 6, "Timer");
-        mqttclient.publish(CONFIG_MQTT_TOPIC_RESPONSE, String(CurrentState).c_str());
         time2 = millis();
         ++timerx10;
         break;
@@ -518,7 +503,6 @@ void sendLowSpeed() {
   rf.initReceive(); //turn back in receive mode
   Serial.println("sending low done.");
   eepromWrite(0, 6, "Low");
-  mqttclient.publish(CONFIG_MQTT_TOPIC_RESPONSE, String(CurrentState).c_str());
   time2 = millis();
   timerx10 = 0;
   //handle_root();
@@ -530,7 +514,6 @@ void sendMediumSpeed() {
   rf.initReceive(); //turn back in receive mode
   Serial.println("sending medium done.");
   eepromWrite(0, 6, "Medium");
-  mqttclient.publish(CONFIG_MQTT_TOPIC_RESPONSE, String(CurrentState).c_str());
   time2 = millis();
   timerx10 = 0;
   // handle_root();
@@ -542,7 +525,6 @@ void sendFullSpeed() {
   rf.initReceive(); //turn back in receive mode
   Serial.println("Now running at maximum speed!");
   eepromWrite(0, 6, "High");
-  mqttclient.publish(CONFIG_MQTT_TOPIC_RESPONSE, String(CurrentState).c_str());
 
   time2 = millis();
   timerx10 = 0;
@@ -555,7 +537,6 @@ void sendTimer() {
   rf.initReceive(); //turn back in receive mode
   Serial.println("sending timer done.");
   eepromWrite(0, 6, "Timer");
-  mqttclient.publish(CONFIG_MQTT_TOPIC_RESPONSE, String(CurrentState).c_str());
   time2 = millis();
   ++timerx10;
   Serial.println("Timer state: : ");
@@ -571,8 +552,6 @@ void handle_DHT() {
   }
   //   mqttclient.publish("m_bed/temperature",String(f));
   //  mqttclient.publish("m_bed/humidity",String(h));
-  mqttclient.publish(CONFIG_MQTT_TOPIC_TEMP, String(f).c_str());
-  mqttclient.publish(CONFIG_MQTT_TOPIC_HUMID, String(h).c_str());
 
 
 
